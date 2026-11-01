@@ -91,14 +91,16 @@ impl Accent {
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Scheme {
     #[default]
+    Academy,
     Modern,
     Classic,
 }
 
 impl Scheme {
-    pub const ALL: [Scheme; 2] = [Scheme::Modern, Scheme::Classic];
+    pub const ALL: [Scheme; 3] = [Scheme::Academy, Scheme::Modern, Scheme::Classic];
     pub fn id(self) -> &'static str {
         match self {
+            Scheme::Academy => "academy",
             Scheme::Modern => "modern",
             Scheme::Classic => "classic",
         }
@@ -425,9 +427,51 @@ impl Tokens {
     /// The tokens for `b` in `scheme`; Modern takes `accent`, Classic has its own blue.
     pub fn for_scheme(scheme: Scheme, b: Brightness, accent: Accent) -> Self {
         match scheme {
+            Scheme::Academy => Self::academy(b),
             Scheme::Modern => Self::for_brightness(b).with_accent(accent),
             Scheme::Classic => Self::classic(b),
         }
+    }
+
+    /// Academy branding is a real selectable palette; legacy schemes remain available.
+    pub fn academy(brightness: Brightness) -> Self {
+        let mut t = Self::for_brightness(brightness);
+        if t.dark {
+            t.app_bar = Color32::from_rgb(30, 18, 43);
+            t.panel = Color32::from_rgb(47, 31, 62);
+            t.panel_darker = Color32::from_rgb(37, 24, 49);
+            t.input = Color32::from_rgb(27, 17, 37);
+            t.input_border = Color32::from_rgb(104, 78, 130);
+            t.border = Color32::from_rgb(21, 13, 29);
+            t.divider = Color32::from_rgb(72, 48, 91);
+            t.text = Color32::from_rgb(246, 236, 218);
+            t.text_dim = Color32::from_rgb(201, 184, 211);
+            t.icon = Color32::from_rgb(228, 216, 235);
+            t.hover = Color32::from_rgb(72, 45, 94);
+            t.button = Color32::from_rgb(77, 48, 101);
+            t.button_border = Color32::from_rgb(143, 113, 169);
+            t.tool_active = Color32::from_rgb(98, 64, 128);
+            t.row_selected = Color32::from_rgb(85, 55, 111);
+            t.pasteboard = Color32::from_rgb(25, 16, 34);
+            t.tab_strip = t.app_bar;
+            t.ruler = t.panel_darker;
+            t.accent = Color32::from_rgb(224, 190, 99);
+            t.accent_strong = Color32::from_rgb(130, 91, 20);
+            t.flyout_active = t.accent;
+        } else {
+            t.app_bar = Color32::from_rgb(235, 223, 246);
+            t.panel = Color32::from_rgb(248, 241, 252);
+            t.panel_darker = Color32::from_rgb(231, 218, 241);
+            t.text = Color32::from_rgb(49, 28, 68);
+            t.text_dim = Color32::from_rgb(92, 65, 111);
+            t.accent = Color32::from_rgb(130, 91, 20);
+            t.accent_strong = Color32::from_rgb(111, 70, 12);
+            t.row_selected = Color32::from_rgb(225, 207, 240);
+            t.tool_active = Color32::from_rgb(213, 190, 232);
+            t.button_border = Color32::from_rgb(137, 107, 157);
+            t.flyout_active = t.accent_strong;
+        }
+        t
     }
 
     /// These tokens with `accent`: the accent, buttons filled with it, the active item in flyouts and
@@ -668,5 +712,15 @@ mod tests {
             assert_eq!(classic.accent, Color32::from_rgb(0x37, 0x8e, 0xf0));
             assert_eq!(Scheme::parse(Scheme::Classic.id()), Some(Scheme::Classic));
         }
+    }
+
+    #[test]
+    fn academy_is_a_selectable_default_with_purple_surfaces_and_gold_accents() {
+        assert_eq!(Scheme::default(), Scheme::Academy);
+        assert_eq!(Scheme::parse("academy"), Some(Scheme::Academy));
+        let tokens = Tokens::for_scheme(Scheme::Academy, Brightness::MediumDark, Accent::Coral);
+        assert_eq!(tokens.panel, Color32::from_rgb(47, 31, 62));
+        assert_eq!(tokens.accent, Color32::from_rgb(224, 190, 99));
+        assert!(tokens.text.r() > tokens.panel.r() + 100);
     }
 }

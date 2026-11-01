@@ -1,45 +1,57 @@
-//! The VectorCraft brand mark: the app icon (the engraved dragon, `assets/app-icon/`, see its
-//! README). The PNG carries the icon's rounded corners; it is decoded once per context into a
-//! mipmapped texture, so it stays crisp from the 18 pt app-bar mark to the About box.
-
+//! Original ALEJANDRO Creative Academy crown-and-A mark, generated in Rust.
+// Copyright 2026 Alejandro Creative Academy. MIT OR Apache-2.0.
 use egui::{Color32, Context, Id, Rect, TextureHandle, TextureOptions, Ui, pos2};
-
-/// 128 px: sharp at 44 pt on a 2× display, and the mipmaps keep 22 pt clean.
-const ICON_PNG: &[u8] = include_bytes!("../../../assets/app-icon/hicolor/128x128/apps/ai.storyteller.vectorcraft.png");
-
-/// The icon's pixels (one transparent pixel if it couldn't be decoded, which a test rules out).
 fn decode() -> egui::ColorImage {
-    match image::load_from_memory_with_format(ICON_PNG, image::ImageFormat::Png) {
-        Ok(img) => {
-            let img = img.to_rgba8();
-            egui::ColorImage::from_rgba_unmultiplied([img.width() as usize, img.height() as usize], img.as_raw())
+    let mut image = egui::ColorImage::filled([128, 128], Color32::TRANSPARENT);
+    for (i, pixel) in image.pixels.iter_mut().enumerate() {
+        let x = (i % 128) as i32;
+        let y = (i / 128) as i32;
+        let dx = x - x.clamp(22, 105);
+        let dy = y - y.clamp(22, 105);
+        if dx * dx + dy * dy > 22 * 22 {
+            continue;
         }
-        Err(_) => egui::ColorImage::filled([1, 1], Color32::TRANSPARENT),
+        *pixel = Color32::from_rgb(40, 23, 56);
+        let crown_tip = 30 + (x - 64).abs() / 2;
+        if (27..=100).contains(&x) && (crown_tip..=57).contains(&y) {
+            *pixel = Color32::from_rgb(217, 182, 88);
+        }
+        let half = (y - 63) / 2;
+        if (66..=106).contains(&y) && (x - 64).abs() <= half && ((x - 64).abs() >= half - 7 || (89..=96).contains(&y)) {
+            *pixel = Color32::from_rgb(248, 236, 208);
+        }
     }
+    image
 }
-
-/// The icon texture, uploaded on first use and kept in the context.
 fn texture(ctx: &Context) -> TextureHandle {
-    let id = Id::unique("vectorcraft-brand-mark");
-    if let Some(tex) = ctx.data(|d| d.get_temp::<TextureHandle>(id)) {
-        return tex;
+    let id = Id::new("aca-brand-mark");
+    if let Some(texture) = ctx.data(|data| data.get_temp::<TextureHandle>(id)) {
+        return texture;
     }
     let options = TextureOptions { mipmap_mode: Some(egui::TextureFilter::Linear), ..TextureOptions::LINEAR };
-    let tex = ctx.load_texture("vectorcraft-brand-mark", decode(), options);
-    ctx.data_mut(|d| d.insert_temp(id, tex.clone()));
-    tex
+    let texture = ctx.load_texture("aca-brand-mark", decode(), options);
+    ctx.data_mut(|data| data.insert_temp(id, texture.clone()));
+    texture
 }
-
-/// Paint the mark into `r` (square).
-pub fn paint_mark(ui: &Ui, r: Rect) {
+pub fn paint_mark(ui: &Ui, rect: Rect) {
     let uv = Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0));
-    ui.painter().image(texture(ui.ctx()).id(), r, uv, Color32::WHITE);
+    ui.painter().image(texture(ui.ctx()).id(), rect, uv, Color32::WHITE);
 }
-
-/// The mark's texture id (tests: find the painted marks among the shapes).
 #[cfg(test)]
 pub fn texture_id(ctx: &Context) -> egui::TextureId {
     texture(ctx).id()
+}
+#[cfg(test)]
+mod academy_tests {
+    use super::*;
+    #[test]
+    fn original_mark_is_bounded_transparent_at_corners_and_opaque_at_center() {
+        let image = decode();
+        assert_eq!(image.size, [128, 128]);
+        assert_eq!(image.pixels.first().map(|p| p.a()), Some(0));
+        assert_eq!(image.pixels.get(64 * 128 + 64).map(|p| p.a()), Some(255));
+        assert!(image.pixels.iter().any(|p| *p == Color32::from_rgb(217, 182, 88)));
+    }
 }
 
 #[cfg(test)]

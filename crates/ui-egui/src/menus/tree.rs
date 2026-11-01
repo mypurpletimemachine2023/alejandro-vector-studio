@@ -19,8 +19,8 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
             // App menu from this entry and the other menus (About from Help, Settings from Edit,
             // Quit from File, Language and Appearance synthesized). It stays first: `from_tree`
             // gives the first menu the App role.
-            "VectorCraft",
-            vec![c("About VectorCraft", "help.about"), c("Join Our Discord", "help.discord")],
+            "ACA Vector Studio",
+            vec![c("About ACA Vector Studio", "help.about"), c("Join Our Discord", "help.discord")],
         ),
         (
             "File",
@@ -692,7 +692,7 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                 todos("VectorCraft Help…", "F1"),
                 Sep,
                 c("Check for Updates…", "help.checkForUpdates"),
-                c("About VectorCraft", "help.about"),
+                c("About ACA Vector Studio", "help.about"),
             ],
         ),
     ]
