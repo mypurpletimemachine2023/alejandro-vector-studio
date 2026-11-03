@@ -258,7 +258,7 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         rows,
         opts: app.ui.layers_panel.clone(),
         t,
-        h: app.ui.layers_panel.row(),
+        h: if app.compact.active { app.ui.layers_panel.row().max(44.0) } else { app.ui.layers_panel.row() },
         column: ui.data(|d| d.get_temp(key("column"))),
         reveal,
         identify_xml_id: app.session.prefs.identify_objects_by == "xmlId",

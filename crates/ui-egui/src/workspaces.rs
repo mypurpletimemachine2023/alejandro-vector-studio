@@ -144,6 +144,10 @@ pub fn builtins() -> Vec<Workspace> {
 /// workspace; off, or when no touch screen is reported, the workspace before that switch is
 /// restored if Touch was entered automatically.
 pub fn sync_touch_workspace(app: &mut VectorcraftApp, touch_screen: bool) {
+    // Compact is a runtime projection; it must never capture/replace the desktop workspace.
+    if app.compact.active {
+        return;
+    }
     let auto = app.session.prefs.touch_workspace && touch_screen;
     if auto {
         if app.ui.workspace != TOUCH {

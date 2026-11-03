@@ -4286,8 +4286,44 @@ fn two_fingers_dragged_together_pan_the_canvas() {
 /// history, and lifting the fingers commits nothing. One finger still draws afterwards.
 #[test]
 fn a_second_finger_cancels_the_tool_gesture_the_first_began() {
+    second_finger_cancellation_fixture(false);
+}
+
+#[test]
+fn aca_mobile_second_finger_cancels_even_with_desktop_gestures_disabled() {
+    second_finger_cancellation_fixture(true);
+}
+
+#[test]
+fn aca_mobile_navigate_pans_without_replacing_tool_or_creating_art() {
+    let mut app = VectorcraftApp::new(Session::new(), Default::default());
+    app.run("file.new", json!({"width":400,"height":300})).unwrap();
+    app.select_tool("pencil");
+    app.compact.active = true;
+    app.compact.navigate = true;
+    let ctx = egui::Context::default();
+    frame(&mut app, &ctx, vec![]);
+    let at = app.canvas_rect.unwrap().center();
+    let moved = at + vec2(30.0, 20.0);
+    let doc = app.session.active().unwrap().doc.clone();
+    let center = app.view().unwrap().center;
+    let touch = |phase, pos| egui::Event::Touch { device_id: egui::TouchDeviceId(1), id: egui::TouchId(1), phase, pos, force: None };
+    let button = |pos, pressed| egui::Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
+    frame(&mut app, &ctx, vec![touch(egui::TouchPhase::Start, at), egui::Event::PointerMoved(at), button(at, true)]);
+    frame(&mut app, &ctx, vec![touch(egui::TouchPhase::Move, moved), egui::Event::PointerMoved(moved)]);
+    frame(&mut app, &ctx, vec![touch(egui::TouchPhase::End, moved), button(moved, false), egui::Event::PointerGone]);
+    assert_eq!(app.session.tool_id(), "pencil");
+    assert_eq!(*app.session.active().unwrap().doc, *doc);
+    assert_ne!(app.view().unwrap().center, center);
+}
+
+fn second_finger_cancellation_fixture(compact: bool) {
     for (tool, together) in [("pencil", false), ("selection", false), ("pencil", true), ("selection", true)] {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.compact.active = compact;
+        if compact {
+            app.session.prefs.touch_gestures = false;
+        }
         app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
         app.session.execute("shape.rectangle", &json!({"x": 50, "y": 50, "width": 100, "height": 100})).unwrap();
         app.select_tool(tool);

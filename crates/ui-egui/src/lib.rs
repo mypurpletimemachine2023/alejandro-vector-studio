@@ -29,6 +29,8 @@ pub mod canvas;
 pub mod chrome;
 mod clipboard_probe;
 pub mod community;
+mod compact;
+mod compact_policy;
 pub mod control;
 pub mod credits;
 pub mod cursors;
@@ -123,6 +125,7 @@ pub(crate) use state::{InputFrame, take_frame_once};
 pub struct VectorcraftApp {
     pub session: Session,
     pub ui: UiState,
+    pub(crate) compact: compact::Runtime,
     pub views: Vec<View>,
     pub services: Services,
     pub canvas: CanvasCache,

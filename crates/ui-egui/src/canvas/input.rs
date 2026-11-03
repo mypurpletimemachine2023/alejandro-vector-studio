@@ -199,8 +199,14 @@ fn wheel_view(
     let turn_id = egui::Id::unique("canvas-wheel-turn");
     let turn_before: WheelTurn = ui.data(|d| d.get_temp(turn_id)).unwrap_or_default();
     let mut turn = turn_before;
-    let (pointer, m, space, (factor, scroll)) =
-        ui.input(|i| (i.pointer.clone(), i.modifiers, i.key_down(egui::Key::Space), wheel(i, wheel_zooms, animate, line, rect.height(), &mut turn)));
+    let (pointer, m, space, (factor, scroll)) = ui.input(|i| {
+        (
+            i.pointer.clone(),
+            i.modifiers,
+            i.key_down(egui::Key::Space) || crate::compact::navigating(app),
+            wheel(i, wheel_zooms, animate, line, rect.height(), &mut turn),
+        )
+    });
     if turn != turn_before {
         ui.data_mut(|d| d.insert_temp(turn_id, turn));
     }
@@ -259,7 +265,7 @@ fn begin_drag(app: &mut VectorcraftApp, ui: &Ui, f: &Pointing, p: Pos2) {
     let zoom_mode = if space { m.command } else { tool == "zoom" };
     let rotate_mode = if space { m.shift && !m.command } else { tool == "rotateView" };
     let pan_mode = if space { !m.command && !m.shift } else { tool == "hand" };
-    let d = if crate::touch::finger_navigates_only() {
+    let d = if crate::touch::finger_navigates_only() && !crate::compact::navigating(app) {
         // A finger (or a palm) once a pen has been seen: it navigates, it doesn't draw.
         Drag::Gesture
     } else if zoom_mode {

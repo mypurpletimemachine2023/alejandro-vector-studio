@@ -369,6 +369,16 @@ impl eframe::App for WebShell {
             self.restart(&why);
         }
         let Some(app) = &mut self.app else { return };
+        if app.compact_layout_needs_init() {
+            let stored = local_storage().ok().and_then(|s| s.get_item("aca.vector.layout.v1").ok().flatten());
+            app.initialize_compact_layout(stored.as_deref());
+        }
+        if let Some(value) = app.take_compact_layout_change()
+            && let Ok(storage) = local_storage()
+            && let Err(e) = storage.set_item("aca.vector.layout.v1", value)
+        {
+            log::warn!("Layout preference could not be saved: {e:?}");
+        }
         crate::academy::attach(ctx);
         if let Some(light) = crate::academy::take() {
             let _ = app.run("window.brightness", serde_json::json!({"brightness": if light { "light" } else { "dark" }}));
@@ -424,6 +434,7 @@ impl eframe::App for WebShell {
                 }
             }
             app.ui(ui);
+            crate::academy::applied_layout(app.compact_layout_state());
         }
         crate::api::poll_replies();
     }

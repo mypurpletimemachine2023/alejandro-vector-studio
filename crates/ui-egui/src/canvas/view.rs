@@ -409,7 +409,7 @@ pub(super) fn wheel(i: &egui::InputState, wheel_zooms: bool, animate: bool, line
 /// finger drops the press the first one began (its tool interaction rolled back; the rest of the
 /// gesture presses nothing), and a tap of two fingers undoes, one of three redoes.
 pub(super) fn touch_gestures(app: &mut VectorcraftApp, ui: &Ui, rect: egui::Rect, view: vectorcraft_engine::ViewInfo) {
-    if !app.session.prefs.touch_gestures {
+    if !app.session.prefs.touch_gestures && !app.compact.active {
         return;
     }
     let (touches, now): (Vec<_>, f64) = ui.input(|i| {

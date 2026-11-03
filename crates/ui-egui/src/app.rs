@@ -57,6 +57,7 @@ impl VectorcraftApp {
         Self {
             session,
             ui: UiState::default(),
+            compact: Default::default(),
             views,
             services,
             canvas: CanvasCache {
@@ -450,6 +451,7 @@ impl VectorcraftApp {
         let confined = self.synthetic_frame.then(|| self.automation_roots.clone()).flatten();
         if let Err(msg) = file_access::confine(confined.as_ref(), || {
             vectorcraft_engine::guard::catch_panic(|| {
+                crate::compact::prepare(self, &ctx);
                 self.ui_setup(&ctx);
                 self.handle_input_once(&ctx);
                 self.ui_frame(ui);
@@ -482,25 +484,30 @@ impl VectorcraftApp {
         // A selection move released over a panel ends before any panel sees the release (#2826).
         canvas::release_over_panel(self, &ctx);
         let t = theme::Tokens::get(&ctx);
-        if self.ui.screen_mode < 2 {
-            chrome::app_bar(self, ui);
-            if self.ui.control_bar {
-                chrome::control_bar(self, ui);
-            }
-        }
-        if self.ui.status_bar && self.ui.screen_mode < 3 {
-            chrome::status_bar(self, ui);
-            chrome::hint_bar(self, ui);
+        if self.compact.active {
+            crate::compact::show(self, ui);
         } else {
-            // Keeps the previous frame's value valid for menus drawn above, before the bars.
-            widgets::set_menu_floor(&ctx, ctx.content_rect().bottom());
+            if self.ui.screen_mode < 2 {
+                chrome::app_bar(self, ui);
+                if self.ui.control_bar {
+                    chrome::control_bar(self, ui);
+                }
+            }
+            if self.ui.status_bar && self.ui.screen_mode < 3 {
+                chrome::status_bar(self, ui);
+                chrome::hint_bar(self, ui);
+            } else {
+                // Keeps the previous frame's value valid for menus drawn above, before the bars.
+                widgets::set_menu_floor(&ctx, ctx.content_rect().bottom());
+            }
+            if self.ui.toolbar && self.ui.screen_mode < 3 {
+                toolbar::show(self, ui);
+            }
+            panels::library_panel::tidy(self);
+            // The canvas and the panels: one docking layout. Tab hides the panels but not the canvas.
+            egui::CentralPanel::default().frame(egui::Frame::NONE.fill(t.pasteboard)).show(ui, |ui| panel_docking::show(self, ui));
+            crate::compact::desktop_controls(self, &ctx);
         }
-        if self.ui.toolbar && self.ui.screen_mode < 3 {
-            toolbar::show(self, ui);
-        }
-        panels::library_panel::tidy(self);
-        // The canvas and the panels: one docking layout. Tab hides the panels but not the canvas.
-        egui::CentralPanel::default().frame(egui::Frame::NONE.fill(t.pasteboard)).show(ui, |ui| panel_docking::show(self, ui));
         dialogs::show(self, &ctx);
         updates_ui::show(self, &ctx);
         export_progress::show(self, &ctx);
