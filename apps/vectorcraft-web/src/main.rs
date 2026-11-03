@@ -43,3 +43,6 @@ fn main() {
 fn main() {
     eprintln!("vectorcraft-web only runs in the browser: build it with `trunk build --release` in apps/vectorcraft-web");
 }
+
+#[cfg(target_arch = "wasm32")]
+mod academy;

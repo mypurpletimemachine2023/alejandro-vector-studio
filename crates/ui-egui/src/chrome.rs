@@ -114,7 +114,7 @@ pub fn app_bar(app: &mut VectorcraftApp, ui: &mut Ui) {
                 crate::community::discord_button(app, ui, false);
             }
             if app.services.native_menu.is_some() {
-                let title = ui.painter().layout_no_wrap("ACA Vector Studio".into(), egui::FontId::proportional(13.5), t.text);
+                let title = ui.painter().layout_no_wrap("ACA Vector Lab".into(), egui::FontId::proportional(13.5), t.text);
                 let title_rect = egui::Rect::from_center_size(full.center(), title.size());
                 // Keep the title centered only while the interactive groups leave room for it.
                 if title_rect.left() >= menus_end + 8.0 && title_rect.right() <= ui.min_rect().left() - 8.0 {
@@ -143,8 +143,8 @@ pub fn system_title_bar(app: &VectorcraftApp) -> bool {
 pub fn window_title(app: &VectorcraftApp) -> String {
     app.session
         .active()
-        .map(|d| format!("{}{} \u{2014} ACA Vector Studio", if d.is_dirty() { "*" } else { "" }, d.title()))
-        .unwrap_or_else(|| "ACA Vector Studio".into())
+        .map(|d| format!("{}{} \u{2014} ACA Vector Lab", if d.is_dirty() { "*" } else { "" }, d.title()))
+        .unwrap_or_else(|| "ACA Vector Lab".into())
 }
 
 /// Keep the OS window title (and the taskbar / Alt-Tab entry) on the active file. Sends
@@ -283,12 +283,12 @@ mod visual_regressions {
                             _ => None,
                         })
                         .collect();
-                    let title = texts.iter().find(|text| text.galley.job.text == "ACA Vector Studio");
+                    let title = texts.iter().find(|text| text.galley.job.text == "ACA Vector Lab");
                     if width >= 1280.0 {
                         assert!(title.is_some(), "the title remains visible when the header has room");
                     }
                     if let Some(title) = title {
-                        for text in texts.iter().filter(|text| text.galley.job.text != "ACA Vector Studio") {
+                        for text in texts.iter().filter(|text| text.galley.job.text != "ACA Vector Lab") {
                             assert!(
                                 !title.visual_bounding_rect().intersects(text.visual_bounding_rect()),
                                 "{width}: title overlaps {:?}",
