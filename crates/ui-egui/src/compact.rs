@@ -74,7 +74,9 @@ pub(crate) fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     egui::Panel::top("aca-vector-compact-bar").frame(egui::Frame::NONE.fill(t.panel).inner_margin(4)).show(ui, |ui| {
         touch_style(ui);
         ui.horizontal(|ui| {
-            ui.menu_button("File", |ui| {
+            // Use the same native MenuButton/popup path as ui.menu_button, with an explicit
+            // phone target instead of its desktop-width text button.
+            let (file, _) = egui::containers::menu::MenuButton::from_button(egui::Button::new("File").min_size(vec2(44.0, 44.0))).ui(ui, |ui| {
                 touch_style(ui);
                 if ui.button("New drawing…").clicked() {
                     app.compact.new_size = [512, 512];
@@ -89,6 +91,7 @@ pub(crate) fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
                     }
                 }
             });
+            app.compact.controls.push(("file", [file.rect.left(), file.rect.top(), file.rect.width(), file.rect.height()]));
             if button(app, ui, "tools", "Tools", false) {
                 app.compact.drawer = Some(Drawer::Tools);
             }
@@ -244,6 +247,7 @@ mod tests {
             });
             output.textures_delta.clear();
             assert!(app.compact.active);
+            assert!(app.compact.controls.iter().any(|(id, _)| *id == "file"), "File's Open/Save menu must be included in actual target measurements");
             for (id, [x, y, width, height]) in &app.compact.controls {
                 assert!(*width >= 44.0 && *height >= 44.0, "{id}: {width}x{height}");
                 assert!(*x >= 0.0 && *y >= 0.0 && x + width <= w + 1.0 && y + height <= h + 1.0, "{id} outside {w}x{h}");
