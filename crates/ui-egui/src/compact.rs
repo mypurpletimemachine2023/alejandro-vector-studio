@@ -226,7 +226,8 @@ mod tests {
         ctx.begin_pass(egui::RawInput { screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, vec2(390.0, 747.0))), ..Default::default() });
         prepare(&mut app, &ctx);
         assert!(app.compact.active);
-        let _ = ctx.end_pass();
+        let mut output = ctx.end_pass();
+        output.textures_delta.clear();
         assert_eq!(serde_json::to_value(&app.ui).unwrap(), before);
     }
     #[test]
