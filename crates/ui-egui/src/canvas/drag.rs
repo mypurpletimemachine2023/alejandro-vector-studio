@@ -173,10 +173,10 @@ pub(super) fn drop_press(app: &mut VectorcraftApp, ui: &Ui, view: vectorcraft_en
             // This synthetic release only resets the cancelled tool. A shape without a
             // committed drag may request its size dialog on Up; cancellation must not act
             // on that request (or a tool switch/place request) as though the user clicked.
-            if let Err(e) = app.session.pointer(
-                &PointerEvent { kind: PointerKind::Up, pos: Point::ZERO, mods: Mods::default(), backquote: false, pressure: 1.0 },
-                view,
-            ) {
+            if let Err(e) = app
+                .session
+                .pointer(&PointerEvent { kind: PointerKind::Up, pos: Point::ZERO, mods: Mods::default(), backquote: false, pressure: 1.0 }, view)
+            {
                 app.status(e.to_string());
             }
             egui::DragAndDrop::clear_payload(ui.ctx());

@@ -4314,12 +4314,9 @@ fn aca_mobile_cancelled_shape_contacts_never_open_a_tool_dialog() {
                 let other = moved + vec2(65.0, 0.0);
                 let doc = app.session.active().unwrap().doc.clone();
                 let undo = app.session.active().unwrap().history.undo.len();
-                let touch = |id, phase, pos| egui::Event::Touch {
-                    device_id: egui::TouchDeviceId(1), id: egui::TouchId(id), phase, pos, force: None,
-                };
-                let button = |pos, pressed| egui::Event::PointerButton {
-                    pos, button: egui::PointerButton::Primary, pressed, modifiers: Default::default(),
-                };
+                let touch = |id, phase, pos| egui::Event::Touch { device_id: egui::TouchDeviceId(1), id: egui::TouchId(id), phase, pos, force: None };
+                let button =
+                    |pos, pressed| egui::Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
                 let press = vec![touch(1, egui::TouchPhase::Start, at), egui::Event::PointerMoved(at), button(at, true)];
                 if preview {
                     frame(&mut app, &ctx, press);
@@ -4330,8 +4327,10 @@ fn aca_mobile_cancelled_shape_contacts_never_open_a_tool_dialog() {
                 }
                 let second = touch(2, egui::TouchPhase::Start, other);
                 let cancel = vec![
-                    touch(1, egui::TouchPhase::Cancel, moved), touch(2, egui::TouchPhase::Cancel, other),
-                    button(moved, false), egui::Event::PointerGone,
+                    touch(1, egui::TouchPhase::Cancel, moved),
+                    touch(2, egui::TouchPhase::Cancel, other),
+                    button(moved, false),
+                    egui::Event::PointerGone,
                 ];
                 if batched {
                     frame(&mut app, &ctx, [vec![second], cancel].concat());
