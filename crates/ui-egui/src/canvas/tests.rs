@@ -4294,6 +4294,71 @@ fn aca_mobile_second_finger_cancels_even_with_desktop_gestures_disabled() {
     second_finger_cancellation_fixture(true);
 }
 
+/// Cancelling a shape's press is cleanup, never the click that opens its size dialog.
+/// Cover a preview already drawn and contacts coalesced before the first preview, with
+/// cancellation in the second-contact frame or a later frame. A subsequent stroke works.
+#[test]
+fn aca_mobile_cancelled_shape_contacts_never_open_a_tool_dialog() {
+    for tool in ["rectangle", "ellipse"] {
+        for preview in [false, true] {
+            for batched in [false, true] {
+                let mut app = VectorcraftApp::new(Session::new(), Default::default());
+                app.compact.active = true;
+                app.session.prefs.touch_gestures = false;
+                app.run("file.new", json!({"width":400,"height":300})).unwrap();
+                app.select_tool(tool);
+                let ctx = egui::Context::default();
+                frame(&mut app, &ctx, vec![]);
+                let at = app.canvas_rect.unwrap().center() - vec2(80.0, 50.0);
+                let moved = at + vec2(75.0, 40.0);
+                let other = moved + vec2(65.0, 0.0);
+                let doc = app.session.active().unwrap().doc.clone();
+                let undo = app.session.active().unwrap().history.undo.len();
+                let touch = |id, phase, pos| egui::Event::Touch {
+                    device_id: egui::TouchDeviceId(1), id: egui::TouchId(id), phase, pos, force: None,
+                };
+                let button = |pos, pressed| egui::Event::PointerButton {
+                    pos, button: egui::PointerButton::Primary, pressed, modifiers: Default::default(),
+                };
+                let press = vec![touch(1, egui::TouchPhase::Start, at), egui::Event::PointerMoved(at), button(at, true)];
+                if preview {
+                    frame(&mut app, &ctx, press);
+                    frame(&mut app, &ctx, vec![touch(1, egui::TouchPhase::Move, moved), egui::Event::PointerMoved(moved)]);
+                    assert!(app.session.in_interaction(), "{tool}: the live preview began");
+                } else {
+                    frame(&mut app, &ctx, press);
+                }
+                let second = touch(2, egui::TouchPhase::Start, other);
+                let cancel = vec![
+                    touch(1, egui::TouchPhase::Cancel, moved), touch(2, egui::TouchPhase::Cancel, other),
+                    button(moved, false), egui::Event::PointerGone,
+                ];
+                if batched {
+                    frame(&mut app, &ctx, [vec![second], cancel].concat());
+                } else {
+                    frame(&mut app, &ctx, vec![second]);
+                    assert!(app.ui.dialog.is_none(), "{tool}: second contact cannot launch a dialog");
+                    frame(&mut app, &ctx, cancel);
+                }
+                frame(&mut app, &ctx, vec![]);
+                let st = app.session.active().unwrap();
+                assert!(app.ui.dialog.is_none(), "{tool}, preview={preview}, batched={batched}: cancellation cannot launch a dialog");
+                assert!(st.interaction.is_none(), "no cancelled interaction remains");
+                assert_eq!(*st.doc, *doc, "no cancelled artwork remains");
+                assert_eq!(st.history.undo.len(), undo, "cancellation adds no undo step");
+                // Input ownership returns to a fresh finger after all contacts were cancelled.
+                frame(&mut app, &ctx, vec![touch(3, egui::TouchPhase::Start, at), egui::Event::PointerMoved(at), button(at, true)]);
+                frame(&mut app, &ctx, vec![touch(3, egui::TouchPhase::Move, moved), egui::Event::PointerMoved(moved)]);
+                frame(&mut app, &ctx, vec![touch(3, egui::TouchPhase::End, moved), button(moved, false), egui::Event::PointerGone]);
+                let st = app.session.active().unwrap();
+                assert!(app.ui.dialog.is_none(), "a real next stroke opens no size dialog");
+                assert_eq!(st.doc.layers[0].children().unwrap().len(), 1, "a fresh stroke creates its shape");
+                assert_eq!(st.history.undo.len(), undo + 1, "only the fresh stroke enters undo");
+            }
+        }
+    }
+}
+
 #[test]
 fn aca_mobile_navigate_pans_without_replacing_tool_or_creating_art() {
     let mut app = VectorcraftApp::new(Session::new(), Default::default());
